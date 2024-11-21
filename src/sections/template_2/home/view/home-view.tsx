@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -10,14 +10,14 @@ import {
   Card,
   CardMedia,
   CardContent,
-  Avatar,
   Divider,
 } from "@mui/material";
-
 import StarIcon from "@mui/icons-material/Star";
 import { ProductCarousel } from "src/components/ProductCarousel";
 import { TestCarousel } from "src/components/TestCarousel";
 import { EmailSignUp } from "src/components/EmailSignUp";
+import CartModal from "src/components/CartModal/cart-modal";
+import productData from "src/usage/product.json";
 
 const GIFTS = [
   {
@@ -27,13 +27,13 @@ const GIFTS = [
   },
   {
     imageUrl: "/images/crew_jumper.webp",
-    title: "771 Crew Neck Jumper Fleece",
-    price: 10,
+    title: "772 Crew Neck Jumper Fleece",
+    price: 12,
   },
   {
     imageUrl: "/images/crew_jumper.webp",
-    title: "771 Crew Neck Jumper Fleece",
-    price: 10,
+    title: "773 Crew Neck Jumper Fleece",
+    price: 15,
   },
 ];
 
@@ -87,6 +87,72 @@ const STORIES = [
 ];
 
 export function HomeView() {
+
+  const [cart, setCart] = useState<any[]>([]); // State to hold the items in the cart
+  const [cartModalOpen, setCartModalOpen] = useState(false);
+  // Load cart from localStorage if available
+  useEffect(() => {
+    const storedCart = JSON.parse(localStorage.getItem("cart") || "[]");
+    setCart(storedCart);
+  }, []);
+
+  const handleAddToCart = (product: any) => {
+    const existingProduct = cart.find((item) => item.title === product.title);
+
+    if (existingProduct) {
+      // If product exists in cart, increase quantity
+      existingProduct.quantity += 1;
+      const updatedCart = [...cart];
+      setCart(updatedCart);
+      localStorage.setItem("cart", JSON.stringify(updatedCart));
+    } else {
+      // If product doesn't exist, add it to cart with quantity 1
+      const updatedCart = [...cart, { ...product, quantity: 1 }];
+      setCart(updatedCart);
+      localStorage.setItem("cart", JSON.stringify(updatedCart));
+    }
+
+    // Open the cart modal
+    setCartModalOpen(true);
+  };
+
+  const calculateTotal = (updatedCart: any[]) => {
+    const total = updatedCart.reduce((sum, item) => sum + item.quantity, 0);
+    localStorage.setItem("cartTotal", JSON.stringify(total)); // Save the total amount to localStorage
+  };
+
+  const handleRemoveProduct = (product: any) => {
+    const updatedCart = cart.filter((item) => item.title !== product.title);
+    setCart(updatedCart);
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+    calculateTotal(updatedCart);
+  };
+
+  // Increase product quantity
+  const handleIncreaseQuantity = (product: any) => {
+    const updatedCart = cart.map((item) =>
+      item.title === product.title
+        ? { ...item, quantity: item.quantity + 1 }
+        : item
+    );
+    setCart(updatedCart);
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+    calculateTotal(updatedCart);
+  };
+
+  // Decrease product quantity
+  const handleDecreaseQuantity = (product: any) => {
+    const updatedCart = cart.map((item) =>
+      item.title === product.title && item.quantity > 1
+        ? { ...item, quantity: item.quantity - 1 }
+        : item
+    );
+    setCart(updatedCart);
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+    calculateTotal(updatedCart);
+  };
+
+
   return (
     <Box>
       {/* Hero Banner */}
@@ -113,12 +179,7 @@ export function HomeView() {
       <Box py={10} sx={{ backgroundColor: "#fff" }}>
         <Container>
           {/* Section Header */}
-          <Typography
-            variant="h4"
-            textAlign="center"
-            mb={2}
-            color="textPrimary"
-          >
+          <Typography variant="h4" textAlign="center" mb={2} color="textPrimary">
             FEATURED COLLECTIONS
           </Typography>
 
@@ -186,6 +247,15 @@ export function HomeView() {
                         <Typography variant="body2" color="textSecondary">
                           ${product.price.toFixed(2)}
                         </Typography>
+                        {/* Add to Cart Button */}
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          sx={{ mt: 2 }}
+                          onClick={() => handleAddToCart(product)}
+                        >
+                          Add to Cart
+                        </Button>
                       </CardContent>
                     </Card>
                   </Grid>
@@ -195,7 +265,15 @@ export function HomeView() {
           </Grid>
         </Container>
       </Box>
-
+      <CartModal
+        open={cartModalOpen}
+        onClose={() => setCartModalOpen(false)}
+        cart={cart}
+        handleRemoveProduct={handleRemoveProduct}
+        handleIncreaseQuantity={handleIncreaseQuantity}
+        handleDecreaseQuantity={handleDecreaseQuantity}
+        calculateTotal={calculateTotal}
+      />
       {/* Test Carousel */}
       <TestCarousel />
 
@@ -220,23 +298,14 @@ export function HomeView() {
         <ProductCarousel products={BRANDS} />
       </Box>
 
+      {/* OUR STORIES */}
       <Box pb={40}>
         <Container>
           {/* Section Header */}
-          <Typography
-            variant="h4"
-            textAlign="center"
-            mb={2}
-            color="textPrimary"
-          >
+          <Typography variant="h4" textAlign="center" mb={2} color="textPrimary">
             OUR STORIES
           </Typography>
-          <Typography
-            variant="body1"
-            textAlign="center"
-            mb={4}
-            color="textSecondary"
-          >
+          <Typography variant="body1" textAlign="center" mb={4} color="textSecondary">
             The latest trends, new collections, fashion tips and more.
           </Typography>
 
@@ -252,12 +321,7 @@ export function HomeView() {
                     sx={{ height: "300px", objectFit: "cover" }}
                   />
                   <CardContent>
-                    <Typography
-                      variant="h6"
-                      fontWeight="bold"
-                      gutterBottom
-                      mb={2}
-                    >
+                    <Typography variant="h6" fontWeight="bold" gutterBottom mb={2}>
                       {story.title}
                     </Typography>
                     <Typography variant="body2" color="textSecondary" mb={2}>
