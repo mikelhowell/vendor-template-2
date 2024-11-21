@@ -272,7 +272,7 @@ export function ProductSection({ product }: Props) {
             "Need Help With This Item?",
             "Reviews ★★★★★",
           ].map((label, index) => (
-            <Accordion key={index} variant="standard">
+            <Accordion key={index} variant="outlined">
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography variant="body2">{label}</Typography>
               </AccordionSummary>
